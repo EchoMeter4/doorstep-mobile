@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { recentAccesses } from '../data/mock';
 import { colors } from '../theme';
+import LogoMark from '../components/LogoMark';
 
 const stats = [
   { label: 'Accesos hoy', value: '47' },
@@ -20,11 +21,19 @@ export default function HomeScreen() {
       style={styles.container}
       contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
     >
-      {/* Large title header */}
+      {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
-        <Text style={styles.largeTitle}>Inicio</Text>
-        <Text style={styles.userName}>{user?.name}</Text>
-        <Text style={styles.userRole}>{user?.role}</Text>
+        <View style={styles.headerTop}>
+          <View style={styles.headerLeft}>
+            <Text style={styles.largeTitle}>Inicio</Text>
+            <Text style={styles.userRole}>{user?.role}</Text>
+          </View>
+          <View style={styles.headerBrand}>
+            <LogoMark size={40} radius={11} />
+            <Text style={styles.brandName}>Doorstep</Text>
+          </View>
+        </View>
+        <Text style={styles.userName}>Bienvenido, {user?.name}</Text>
       </View>
 
       <View style={styles.body}>
@@ -86,25 +95,43 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: colors.surface,
     paddingHorizontal: 20,
-    paddingBottom: 16,
+    paddingBottom: 20,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.separator,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  headerLeft: {
+    flex: 1,
   },
   largeTitle: {
     fontSize: 34,
     fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: 6,
-  },
-  userName: {
-    fontSize: 16,
-    fontWeight: '600',
     color: colors.textPrimary,
   },
   userRole: {
     fontSize: 13,
     color: colors.textSecondary,
     marginTop: 2,
+  },
+  headerBrand: {
+    alignItems: 'center',
+    gap: 4,
+  },
+  brandName: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.accent,
+    letterSpacing: 0.3,
+  },
+  userName: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: colors.textSecondary,
   },
   body: {
     padding: 20,
@@ -117,7 +144,7 @@ const styles = StyleSheet.create({
   statCard: {
     flex: 1,
     backgroundColor: colors.surface,
-    borderRadius: 14,
+    borderRadius: 20,
     padding: 16,
     alignItems: 'center',
     shadowColor: '#000',
@@ -129,7 +156,7 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 28,
     fontWeight: '800',
-    color: colors.accent,
+    color: colors.accentBlue,
   },
   statLabel: {
     fontSize: 11,
@@ -148,7 +175,7 @@ const styles = StyleSheet.create({
   },
   accessList: {
     backgroundColor: colors.surface,
-    borderRadius: 14,
+    borderRadius: 20,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },

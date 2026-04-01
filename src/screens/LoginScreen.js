@@ -6,11 +6,13 @@ import {
   TouchableOpacity,
   StyleSheet,
   KeyboardAvoidingView,
+  ScrollView,
   Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { colors } from '../theme';
+import LogoMark from '../components/LogoMark';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
@@ -28,19 +30,29 @@ export default function LoginScreen({ navigation }) {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <View style={[styles.inner, { paddingTop: insets.top + 40, paddingBottom: insets.bottom + 20 }]}>
-        <View style={styles.brand}>
-          <View style={styles.logoMark}>
-            <Text style={styles.logoLetter}>D</Text>
+      <ScrollView
+        contentContainerStyle={[
+          styles.scroll,
+          { paddingTop: insets.top + 40, paddingBottom: insets.bottom + 40 },
+        ]}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Card */}
+        <View style={styles.card}>
+          {/* Logo */}
+          <View style={styles.brand}>
+            <LogoMark size={72} radius={20} />
+            <Text style={styles.wordmark}>Doorstep</Text>
+            <Text style={styles.tagline}>Control de Acceso</Text>
           </View>
-          <Text style={styles.logo}>Doorstep</Text>
-          <Text style={styles.subtitle}>Control de Acceso</Text>
-        </View>
 
-        <View style={styles.form}>
-          <View style={styles.fieldGroup}>
+          <Text style={styles.heading}>Iniciar Sesión</Text>
+
+          {/* Email field */}
+          <View style={styles.fieldWrap}>
+            <Text style={styles.label}>Introduce tu correo</Text>
             <TextInput
-              style={[styles.input, styles.inputTop]}
+              style={styles.input}
               placeholder="Correo electrónico"
               placeholderTextColor={colors.textSecondary}
               value={email}
@@ -48,9 +60,13 @@ export default function LoginScreen({ navigation }) {
               autoCapitalize="none"
               keyboardType="email-address"
             />
-            <View style={styles.separator} />
+          </View>
+
+          {/* Password field */}
+          <View style={styles.fieldWrap}>
+            <Text style={styles.label}>Introduce tu contraseña</Text>
             <TextInput
-              style={[styles.input, styles.inputBottom]}
+              style={styles.input}
               placeholder="Contraseña"
               placeholderTextColor={colors.textSecondary}
               value={password}
@@ -63,7 +79,7 @@ export default function LoginScreen({ navigation }) {
             <Text style={styles.buttonText}>Iniciar Sesión</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -73,87 +89,77 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  inner: {
-    flex: 1,
+  scroll: {
+    flexGrow: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  card: {
+    width: '100%',
+    backgroundColor: colors.surface,
+    borderRadius: 32,
     paddingHorizontal: 28,
+    paddingVertical: 36,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
   },
   brand: {
     alignItems: 'center',
-    marginBottom: 48,
+    marginBottom: 20,
   },
-  logoMark: {
-    width: 72,
-    height: 72,
-    borderRadius: 20,
-    backgroundColor: colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-    shadowColor: colors.accent,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  logoLetter: {
-    fontSize: 40,
-    fontWeight: '800',
-    color: '#ffffff',
-    letterSpacing: -1,
-  },
-  logo: {
-    fontSize: 34,
-    fontWeight: '800',
+  wordmark: {
+    fontSize: 26,
+    fontWeight: '700',
     color: colors.accent,
-    letterSpacing: 0.5,
-    marginBottom: 4,
+    letterSpacing: -0.5,
+    marginTop: 12,
   },
-  subtitle: {
-    fontSize: 15,
+  tagline: {
+    fontSize: 13,
     color: colors.textSecondary,
+    marginTop: 2,
     letterSpacing: 0.3,
   },
-  form: {
-    width: '100%',
+  heading: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    marginBottom: 24,
   },
-  fieldGroup: {
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    marginBottom: 20,
-    overflow: 'hidden',
+  fieldWrap: {
+    marginBottom: 16,
+  },
+  label: {
+    fontSize: 14,
+    color: colors.textPrimary,
+    marginBottom: 8,
+    fontWeight: '500',
   },
   input: {
-    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.separator,
+    borderRadius: 16,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
     color: colors.textPrimary,
-  },
-  inputTop: {
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
-  },
-  inputBottom: {
-    borderBottomLeftRadius: 12,
-    borderBottomRightRadius: 12,
-  },
-  separator: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.separator,
-    marginLeft: 16,
+    backgroundColor: colors.surface,
   },
   button: {
-    backgroundColor: colors.accent,
-    borderRadius: 14,
-    padding: 16,
+    backgroundColor: colors.accentBlue,
+    borderRadius: 16,
+    paddingVertical: 16,
     alignItems: 'center',
+    marginTop: 8,
   },
   buttonText: {
     color: '#ffffff',
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '600',
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
   },
 });

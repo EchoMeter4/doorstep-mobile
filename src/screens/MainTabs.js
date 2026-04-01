@@ -18,7 +18,7 @@ export default function MainTabs() {
           borderTopWidth: StyleSheet.hairlineWidth,
           borderTopColor: colors.separator,
         },
-        tabBarActiveTintColor: colors.accent,
+        tabBarActiveTintColor: colors.accentBlue,
         tabBarInactiveTintColor: colors.textSecondary,
       }}
     >

@@ -239,8 +239,8 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.separator,
   },
   screenTitle: {
-    fontSize: 20,
-    fontWeight: '600',
+    fontSize: 22,
+    fontWeight: '700',
     color: colors.textPrimary,
     marginBottom: 8,
   },
@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
   cameraContainer: {
     flex: 1,
     margin: 16,
-    borderRadius: 16,
+    borderRadius: 20,
     overflow: 'hidden',
     backgroundColor: '#000',
   },
@@ -310,7 +310,7 @@ const styles = StyleSheet.create({
     height: 72,
     borderRadius: 36,
     borderWidth: 4,
-    borderColor: colors.accent,
+    borderColor: colors.accentBlue,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.surface,
@@ -319,7 +319,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: colors.accent,
+    backgroundColor: colors.accentBlue,
   },
   actionButtons: {
     flexDirection: 'row',
@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
   actionButton: {
     flex: 1,
     padding: 16,
-    borderRadius: 14,
+    borderRadius: 16,
     alignItems: 'center',
   },
   authorizeButton: {
@@ -351,8 +351,8 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   permissionButton: {
-    backgroundColor: colors.accent,
-    borderRadius: 12,
+    backgroundColor: colors.accentBlue,
+    borderRadius: 16,
     padding: 16,
     paddingHorizontal: 32,
     alignItems: 'center',
