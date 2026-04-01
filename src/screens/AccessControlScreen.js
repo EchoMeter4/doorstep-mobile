@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,10 +9,12 @@ import {
   Modal,
   TextInput,
   FlatList,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { zones } from '../data/mock';
+import { getZones } from '../services/zoneService';
+import { submitAccess } from '../services/accessService';
 import { colors } from '../theme';
 
 const TYPE_LABELS = {
@@ -27,14 +29,14 @@ const TYPE_COLORS = {
   mixed: colors.purple,
 };
 
-function ZonePickerModal({ visible, selected, onSelect, onDismiss }) {
+function ZonePickerModal({ visible, zones, selected, onSelect, onDismiss }) {
   const [query, setQuery] = useState('');
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return zones;
     return zones.filter((z) => z.name.toLowerCase().includes(q));
-  }, [query]);
+  }, [query, zones]);
 
   const handleSelect = (zone) => {
     onSelect(zone);
@@ -74,7 +76,7 @@ function ZonePickerModal({ visible, selected, onSelect, onDismiss }) {
           keyExtractor={(item) => String(item.id)}
           ItemSeparatorComponent={() => <View style={modal.separator} />}
           renderItem={({ item }) => {
-            const isSelected = item.id === selected.id;
+            const isSelected = selected && item.id === selected.id;
             return (
               <TouchableOpacity
                 style={modal.row}
@@ -83,9 +85,9 @@ function ZonePickerModal({ visible, selected, onSelect, onDismiss }) {
               >
                 <View style={modal.rowLeft}>
                   <Text style={modal.zoneName}>{item.name}</Text>
-                  <View style={[modal.typeBadge, { backgroundColor: TYPE_COLORS[item.type] + '22' }]}>
-                    <Text style={[modal.typeText, { color: TYPE_COLORS[item.type] }]}>
-                      {TYPE_LABELS[item.type]}
+                  <View style={[modal.typeBadge, { backgroundColor: (TYPE_COLORS[item.type] ?? colors.accentBlue) + '22' }]}>
+                    <Text style={[modal.typeText, { color: TYPE_COLORS[item.type] ?? colors.accentBlue }]}>
+                      {TYPE_LABELS[item.type] ?? item.type}
                     </Text>
                   </View>
                 </View>
@@ -101,14 +103,26 @@ function ZonePickerModal({ visible, selected, onSelect, onDismiss }) {
 
 export default function AccessControlScreen() {
   const [permission, requestPermission] = useCameraPermissions();
-  const [selectedZone, setSelectedZone] = useState(zones[0]);
+  const [zones, setZones] = useState([]);
+  const [selectedZone, setSelectedZone] = useState(null);
   const [pickerVisible, setPickerVisible] = useState(false);
   const [capturedPhoto, setCapturedPhoto] = useState(null);
   const [resultVisible, setResultVisible] = useState(false);
   const [resultType, setResultType] = useState(null);
+  const [resultMessage, setResultMessage] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const cameraRef = useRef(null);
   const bannerOpacity = useRef(new Animated.Value(0)).current;
   const insets = useSafeAreaInsets();
+
+  useEffect(() => {
+    getZones()
+      .then((data) => {
+        setZones(data);
+        if (data.length > 0) setSelectedZone(data[0]);
+      })
+      .catch(() => {});
+  }, []);
 
   const handleCapture = async () => {
     if (!cameraRef.current) return;
@@ -116,8 +130,9 @@ export default function AccessControlScreen() {
     setCapturedPhoto(photo.uri);
   };
 
-  const showResult = (type) => {
+  const showResult = (type, message) => {
     setResultType(type);
+    setResultMessage(message);
     setResultVisible(true);
     bannerOpacity.setValue(1);
     Animated.sequence([
@@ -127,7 +142,21 @@ export default function AccessControlScreen() {
       setCapturedPhoto(null);
       setResultVisible(false);
       setResultType(null);
+      setResultMessage('');
     });
+  };
+
+  const handleSubmit = async () => {
+    if (!selectedZone || !capturedPhoto || submitting) return;
+    setSubmitting(true);
+    try {
+      const result = await submitAccess(selectedZone.id, capturedPhoto);
+      showResult(result.authorized ? 'authorized' : 'denied', result.message);
+    } catch (e) {
+      showResult('denied', 'Error al procesar la solicitud');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (!permission) {
@@ -151,6 +180,7 @@ export default function AccessControlScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <ZonePickerModal
         visible={pickerVisible}
+        zones={zones}
         selected={selectedZone}
         onSelect={setSelectedZone}
         onDismiss={() => setPickerVisible(false)}
@@ -165,7 +195,9 @@ export default function AccessControlScreen() {
           activeOpacity={0.7}
         >
           <Text style={styles.zoneLabel}>Zona</Text>
-          <Text style={styles.zoneName} numberOfLines={1}>{selectedZone.name}</Text>
+          <Text style={styles.zoneName} numberOfLines={1}>
+            {selectedZone ? selectedZone.name : 'Cargando…'}
+          </Text>
           <Text style={styles.zoneChevron}>›</Text>
         </TouchableOpacity>
       </View>
@@ -186,9 +218,7 @@ export default function AccessControlScreen() {
               { opacity: bannerOpacity },
             ]}
           >
-            <Text style={styles.resultText}>
-              {resultType === 'authorized' ? 'Acceso Autorizado ✓' : 'Acceso Denegado ✗'}
-            </Text>
+            <Text style={styles.resultText}>{resultMessage}</Text>
           </Animated.View>
         )}
       </View>
@@ -202,16 +232,21 @@ export default function AccessControlScreen() {
         ) : (
           <View style={styles.actionButtons}>
             <TouchableOpacity
-              style={[styles.actionButton, styles.denyButton]}
-              onPress={() => showResult('denied')}
+              style={[styles.actionButton, styles.cancelButton]}
+              onPress={() => setCapturedPhoto(null)}
+              disabled={submitting}
             >
-              <Text style={styles.actionButtonText}>Denegar Acceso</Text>
+              <Text style={styles.actionButtonText}>Retomar</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.actionButton, styles.authorizeButton]}
-              onPress={() => showResult('authorized')}
+              style={[styles.actionButton, styles.submitButton, submitting && styles.buttonDisabled]}
+              onPress={handleSubmit}
+              disabled={submitting}
             >
-              <Text style={styles.actionButtonText}>Autorizar Acceso</Text>
+              {submitting
+                ? <ActivityIndicator color="#ffffff" />
+                : <Text style={styles.actionButtonText}>Verificar Acceso</Text>
+              }
             </TouchableOpacity>
           </View>
         )}
@@ -333,11 +368,14 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
   },
-  authorizeButton: {
-    backgroundColor: colors.green,
+  submitButton: {
+    backgroundColor: colors.accentBlue,
   },
-  denyButton: {
-    backgroundColor: colors.red,
+  cancelButton: {
+    backgroundColor: colors.textSecondary,
+  },
+  buttonDisabled: {
+    opacity: 0.7,
   },
   actionButtonText: {
     color: '#ffffff',

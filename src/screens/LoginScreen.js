@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   View,
   Text,
@@ -8,21 +8,21 @@ import {
   KeyboardAvoidingView,
   ScrollView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { colors } from '../theme';
 import LogoMark from '../components/LogoMark';
 
-export default function LoginScreen({ navigation }) {
+export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { login } = useAuth();
+  const { login, loading, error } = useAuth();
   const insets = useSafeAreaInsets();
 
   const handleLogin = () => {
-    login();
-    navigation.replace('MainTabs');
+    login(email, password);
   };
 
   return (
@@ -75,8 +75,18 @@ export default function LoginScreen({ navigation }) {
             />
           </View>
 
-          <TouchableOpacity style={styles.button} onPress={handleLogin} activeOpacity={0.85}>
-            <Text style={styles.buttonText}>Iniciar Sesión</Text>
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+          <TouchableOpacity
+            style={[styles.button, loading && styles.buttonDisabled]}
+            onPress={handleLogin}
+            activeOpacity={0.85}
+            disabled={loading}
+          >
+            {loading
+              ? <ActivityIndicator color="#ffffff" />
+              : <Text style={styles.buttonText}>Iniciar Sesión</Text>
+            }
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -149,12 +159,21 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     backgroundColor: colors.surface,
   },
+  errorText: {
+    color: colors.red,
+    fontSize: 14,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
   button: {
     backgroundColor: colors.accentBlue,
     borderRadius: 16,
     paddingVertical: 16,
     alignItems: 'center',
     marginTop: 8,
+  },
+  buttonDisabled: {
+    opacity: 0.7,
   },
   buttonText: {
     color: '#ffffff',

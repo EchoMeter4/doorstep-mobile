@@ -1,20 +1,42 @@
-import React from 'react';
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { useState, useEffect } from 'react';
+import { View, Text, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
-import { recentAccesses } from '../data/mock';
+import { getLogs } from '../services/accessService';
 import { colors } from '../theme';
 import LogoMark from '../components/LogoMark';
-
-const stats = [
-  { label: 'Accesos hoy', value: '47' },
-  { label: 'Autorizados', value: '39' },
-  { label: 'Denegados', value: '8' },
-];
 
 export default function HomeScreen() {
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    getLogs(today, today)
+      .then(setLogs)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const total = logs.length;
+  const authorized = logs.filter((l) => l.authorized).length;
+  const denied = total - authorized;
+
+  const stats = [
+    { label: 'Accesos hoy', value: String(total) },
+    { label: 'Autorizados', value: String(authorized) },
+    { label: 'Denegados', value: String(denied) },
+  ];
+
+  const recent = logs.slice(0, 4).map((l) => ({
+    id: l.id,
+    name: l.users[0]?.name ?? 'Desconocido',
+    zone: l.zone.name,
+    time: new Date(l.timestamp).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }),
+    status: l.authorized ? 'authorized' : 'denied',
+  }));
 
   return (
     <ScrollView
@@ -26,7 +48,7 @@ export default function HomeScreen() {
         <View style={styles.headerTop}>
           <View style={styles.headerLeft}>
             <Text style={styles.largeTitle}>Inicio</Text>
-            <Text style={styles.userRole}>{user?.role}</Text>
+            {user?.role ? <Text style={styles.userRole}>{user.role}</Text> : null}
           </View>
           <View style={styles.headerBrand}>
             <LogoMark size={40} radius={11} />
@@ -41,7 +63,10 @@ export default function HomeScreen() {
         <View style={styles.statsRow}>
           {stats.map((s) => (
             <View key={s.label} style={styles.statCard}>
-              <Text style={styles.statValue}>{s.value}</Text>
+              {loading
+                ? <ActivityIndicator color={colors.accentBlue} />
+                : <Text style={styles.statValue}>{s.value}</Text>
+              }
               <Text style={styles.statLabel}>{s.label}</Text>
             </View>
           ))}
@@ -50,37 +75,47 @@ export default function HomeScreen() {
         {/* Recent accesses */}
         <Text style={styles.sectionTitle}>Accesos recientes</Text>
         <View style={styles.accessList}>
-          {recentAccesses.map((entry, index) => (
-            <View key={entry.id}>
-              <View style={styles.accessRow}>
-                <View style={styles.accessInfo}>
-                  <Text style={styles.accessName}>{entry.name}</Text>
-                  <Text style={styles.accessZone}>{entry.zone}</Text>
-                </View>
-                <View style={styles.accessRight}>
-                  <Text style={styles.accessTime}>{entry.time}</Text>
-                  <View
-                    style={[
-                      styles.statusBadge,
-                      entry.status === 'authorized' ? styles.badgeGreen : styles.badgeRed,
-                    ]}
-                  >
-                    <Text
+          {loading ? (
+            <View style={styles.loadingRow}>
+              <ActivityIndicator color={colors.accentBlue} />
+            </View>
+          ) : recent.length === 0 ? (
+            <View style={styles.loadingRow}>
+              <Text style={styles.emptyText}>Sin accesos hoy</Text>
+            </View>
+          ) : (
+            recent.map((entry, index) => (
+              <View key={entry.id}>
+                <View style={styles.accessRow}>
+                  <View style={styles.accessInfo}>
+                    <Text style={styles.accessName}>{entry.name}</Text>
+                    <Text style={styles.accessZone}>{entry.zone}</Text>
+                  </View>
+                  <View style={styles.accessRight}>
+                    <Text style={styles.accessTime}>{entry.time}</Text>
+                    <View
                       style={[
-                        styles.statusText,
-                        { color: entry.status === 'authorized' ? colors.green : colors.red },
+                        styles.statusBadge,
+                        entry.status === 'authorized' ? styles.badgeGreen : styles.badgeRed,
                       ]}
                     >
-                      {entry.status === 'authorized' ? 'Autorizado' : 'Denegado'}
-                    </Text>
+                      <Text
+                        style={[
+                          styles.statusText,
+                          { color: entry.status === 'authorized' ? colors.green : colors.red },
+                        ]}
+                      >
+                        {entry.status === 'authorized' ? 'Autorizado' : 'Denegado'}
+                      </Text>
+                    </View>
                   </View>
                 </View>
+                {index < recent.length - 1 && (
+                  <View style={styles.rowSeparator} />
+                )}
               </View>
-              {index < recentAccesses.length - 1 && (
-                <View style={styles.rowSeparator} />
-              )}
-            </View>
-          ))}
+            ))
+          )}
         </View>
       </View>
     </ScrollView>
@@ -182,6 +217,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 4,
     elevation: 2,
+  },
+  loadingRow: {
+    padding: 24,
+    alignItems: 'center',
+  },
+  emptyText: {
+    color: colors.textSecondary,
+    fontSize: 14,
   },
   accessRow: {
     flexDirection: 'row',
