@@ -15,7 +15,7 @@ import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context'
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { getZones } from '../services/zoneService';
 import { submitAccess } from '../services/accessService';
-import { colors } from '../theme';
+import { colors, fonts } from '../theme';
 
 const TYPE_LABELS = {
   pedestrian: 'Peatonal',
@@ -24,9 +24,15 @@ const TYPE_LABELS = {
 };
 
 const TYPE_COLORS = {
-  pedestrian: colors.accentBlue,
+  pedestrian: colors.brandSecondary,
   vehicular: colors.orange,
-  mixed: colors.purple,
+  mixed: colors.brandPrimary,
+};
+
+const TYPE_BG = {
+  pedestrian: colors.blueBg,
+  vehicular: colors.orangeBg,
+  mixed: colors.gray100,
 };
 
 function ZonePickerModal({ visible, zones, selected, onSelect, onDismiss }) {
@@ -63,7 +69,7 @@ function ZonePickerModal({ visible, zones, selected, onSelect, onDismiss }) {
           <TextInput
             style={modal.searchInput}
             placeholder="Buscar zona…"
-            placeholderTextColor={colors.textSecondary}
+            placeholderTextColor={colors.gray400}
             value={query}
             onChangeText={setQuery}
             clearButtonMode="while-editing"
@@ -77,6 +83,8 @@ function ZonePickerModal({ visible, zones, selected, onSelect, onDismiss }) {
           ItemSeparatorComponent={() => <View style={modal.separator} />}
           renderItem={({ item }) => {
             const isSelected = selected && item.id === selected.id;
+            const typeColor = TYPE_COLORS[item.type] ?? colors.brandSecondary;
+            const typeBg = TYPE_BG[item.type] ?? colors.gray100;
             return (
               <TouchableOpacity
                 style={modal.row}
@@ -85,13 +93,15 @@ function ZonePickerModal({ visible, zones, selected, onSelect, onDismiss }) {
               >
                 <View style={modal.rowLeft}>
                   <Text style={modal.zoneName}>{item.name}</Text>
-                  <View style={[modal.typeBadge, { backgroundColor: (TYPE_COLORS[item.type] ?? colors.accentBlue) + '22' }]}>
-                    <Text style={[modal.typeText, { color: TYPE_COLORS[item.type] ?? colors.accentBlue }]}>
+                  <View style={[modal.typeBadge, { backgroundColor: typeBg }]}>
+                    <Text style={[modal.typeText, { color: typeColor }]}>
                       {TYPE_LABELS[item.type] ?? item.type}
                     </Text>
                   </View>
                 </View>
-                {isSelected && <Text style={modal.checkmark}>✓</Text>}
+                {isSelected && (
+                  <Text style={modal.checkmark}>✓</Text>
+                )}
               </TouchableOpacity>
             );
           }}
@@ -152,7 +162,7 @@ export default function AccessControlScreen() {
     try {
       const result = await submitAccess(selectedZone.id, capturedPhoto);
       showResult(result.authorized ? 'authorized' : 'denied', result.message);
-    } catch (e) {
+    } catch {
       showResult('denied', 'Error al procesar la solicitud');
     } finally {
       setSubmitting(false);
@@ -160,24 +170,24 @@ export default function AccessControlScreen() {
   };
 
   if (!permission) {
-    return <View style={styles.container} />;
+    return <View style={s.container} />;
   }
 
   if (!permission.granted) {
     return (
-      <View style={[styles.container, styles.permissionContainer]}>
-        <Text style={styles.permissionText}>
+      <View style={[s.container, s.permissionWrap]}>
+        <Text style={s.permissionText}>
           Se requiere acceso a la cámara para usar el control de acceso.
         </Text>
-        <TouchableOpacity style={styles.permissionButton} onPress={requestPermission}>
-          <Text style={styles.permissionButtonText}>Permitir acceso</Text>
+        <TouchableOpacity style={s.permissionButton} onPress={requestPermission}>
+          <Text style={s.permissionButtonText}>Permitir acceso</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={s.container}>
       <ZonePickerModal
         visible={pickerVisible}
         zones={zones}
@@ -186,219 +196,174 @@ export default function AccessControlScreen() {
         onDismiss={() => setPickerVisible(false)}
       />
 
-      {/* Header */}
-      <View style={styles.headerArea}>
-        <Text style={styles.screenTitle}>Control de Acceso</Text>
-        <TouchableOpacity
-          style={styles.zoneRow}
-          onPress={() => setPickerVisible(true)}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.zoneLabel}>Zona</Text>
-          <Text style={styles.zoneName} numberOfLines={1}>
-            {selectedZone ? selectedZone.name : 'Cargando…'}
-          </Text>
-          <Text style={styles.zoneChevron}>›</Text>
-        </TouchableOpacity>
-      </View>
-
       {/* Camera */}
-      <View style={styles.cameraContainer}>
+      <View style={s.cameraWrap}>
         {capturedPhoto ? (
-          <Image source={{ uri: capturedPhoto }} style={styles.preview} />
+          <Image source={{ uri: capturedPhoto }} style={s.preview} />
         ) : (
-          <CameraView ref={cameraRef} style={styles.camera} facing="back" />
+          <CameraView ref={cameraRef} style={s.camera} facing="back" />
         )}
 
         {resultVisible && (
           <Animated.View
             style={[
-              styles.resultBanner,
-              resultType === 'authorized' ? styles.bannerGreen : styles.bannerRed,
+              s.resultBanner,
+              resultType === 'authorized' ? s.bannerGreen : s.bannerRed,
               { opacity: bannerOpacity },
             ]}
           >
-            <Text style={styles.resultText}>{resultMessage}</Text>
+            <Text style={s.resultText}>{resultMessage}</Text>
           </Animated.View>
         )}
       </View>
 
       {/* Controls */}
-      <View style={[styles.controls, { paddingBottom: insets.bottom + 16 }]}>
+      <View style={[s.controls, { paddingBottom: insets.bottom + 16 }]}>
         {!capturedPhoto ? (
-          <TouchableOpacity style={styles.shutterOuter} onPress={handleCapture}>
-            <View style={styles.shutterInner} />
+          <TouchableOpacity style={s.shutterOuter} onPress={handleCapture}>
+            <View style={s.shutterInner} />
           </TouchableOpacity>
         ) : (
-          <View style={styles.actionButtons}>
+          <View style={s.actionButtons}>
             <TouchableOpacity
-              style={[styles.actionButton, styles.cancelButton]}
+              style={[s.actionButton, s.cancelButton]}
               onPress={() => setCapturedPhoto(null)}
               disabled={submitting}
             >
-              <Text style={styles.actionButtonText}>Retomar</Text>
+              <Text style={s.actionButtonText}>Retomar</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.actionButton, styles.submitButton, submitting && styles.buttonDisabled]}
+              style={[s.actionButton, s.submitButton, submitting && { opacity: 0.65 }]}
               onPress={handleSubmit}
               disabled={submitting}
             >
               {submitting
-                ? <ActivityIndicator color="#ffffff" />
-                : <Text style={styles.actionButtonText}>Verificar Acceso</Text>
+                ? <ActivityIndicator color="#fff" />
+                : <Text style={s.actionButtonText}>Verificar Acceso</Text>
               }
             </TouchableOpacity>
           </View>
         )}
+
+        {/* Zone selector — thumb-reachable */}
+        <TouchableOpacity
+          style={s.zoneRow}
+          onPress={() => setPickerVisible(true)}
+          activeOpacity={0.7}
+        >
+          <Text style={s.zoneLabel}>Zona</Text>
+          <Text style={s.zoneName} numberOfLines={1}>
+            {selectedZone ? selectedZone.name : 'Cargando…'}
+          </Text>
+          <Text style={s.zoneChevron}>›</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const s = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
   },
-  permissionContainer: {
+  permissionWrap: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 32,
-  },
-  headerArea: {
-    backgroundColor: colors.surface,
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 0,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.separator,
-  },
-  screenTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: 8,
   },
   zoneRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.separator,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    marginTop: 10,
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    marginHorizontal: 16,
   },
   zoneLabel: {
-    fontSize: 15,
+    fontSize: 14,
+    fontFamily: fonts.medium,
     color: colors.textPrimary,
-    fontWeight: '500',
     marginRight: 8,
   },
   zoneName: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 14,
+    fontFamily: fonts.regular,
     color: colors.textSecondary,
   },
   zoneChevron: {
     fontSize: 20,
-    color: colors.textSecondary,
+    color: colors.gray400,
     fontWeight: '300',
   },
-  cameraContainer: {
+  cameraWrap: {
     flex: 1,
     margin: 16,
-    borderRadius: 20,
+    borderRadius: 24,
     overflow: 'hidden',
     backgroundColor: '#000',
   },
-  camera: {
-    flex: 1,
-  },
-  preview: {
-    flex: 1,
-  },
+  camera: { flex: 1 },
+  preview: { flex: 1 },
   resultBanner: {
     position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
+    bottom: 0, left: 0, right: 0,
     padding: 20,
     alignItems: 'center',
   },
-  bannerGreen: {
-    backgroundColor: colors.green,
-  },
-  bannerRed: {
-    backgroundColor: colors.red,
-  },
+  bannerGreen: { backgroundColor: colors.green },
+  bannerRed: { backgroundColor: colors.red },
   resultText: {
-    color: '#ffffff',
-    fontSize: 22,
-    fontWeight: '700',
+    color: '#fff',
+    fontSize: 20,
+    fontFamily: fonts.bold,
     letterSpacing: 0.3,
   },
   controls: {
-    height: 110,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingTop: 12,
   },
   shutterOuter: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    borderWidth: 4,
-    borderColor: colors.accentBlue,
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 72, height: 72, borderRadius: 36,
+    borderWidth: 4, borderColor: colors.brandSecondary,
+    alignItems: 'center', justifyContent: 'center',
     backgroundColor: colors.surface,
   },
   shutterInner: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.accentBlue,
+    width: 56, height: 56, borderRadius: 28,
+    backgroundColor: colors.brandSecondary,
   },
   actionButtons: {
-    flexDirection: 'row',
-    gap: 12,
-    paddingHorizontal: 16,
-    width: '100%',
+    flexDirection: 'row', gap: 12,
+    paddingHorizontal: 16, width: '100%',
   },
   actionButton: {
-    flex: 1,
-    padding: 16,
-    borderRadius: 16,
-    alignItems: 'center',
+    flex: 1, padding: 16, borderRadius: 16, alignItems: 'center',
   },
-  submitButton: {
-    backgroundColor: colors.accentBlue,
-  },
-  cancelButton: {
-    backgroundColor: colors.textSecondary,
-  },
-  buttonDisabled: {
-    opacity: 0.7,
-  },
+  submitButton: { backgroundColor: colors.brandSecondary },
+  cancelButton: { backgroundColor: colors.gray400 },
   actionButtonText: {
-    color: '#ffffff',
-    fontSize: 15,
-    fontWeight: '600',
+    color: '#fff', fontSize: 14, fontFamily: fonts.semibold,
   },
   permissionText: {
+    fontFamily: fonts.regular,
     color: colors.textSecondary,
-    fontSize: 16,
+    fontSize: 15,
     textAlign: 'center',
     marginBottom: 24,
   },
   permissionButton: {
-    backgroundColor: colors.accentBlue,
-    borderRadius: 16,
-    padding: 16,
-    paddingHorizontal: 32,
-    alignItems: 'center',
+    backgroundColor: colors.brandSecondary,
+    borderRadius: 14, padding: 15, paddingHorizontal: 32,
   },
   permissionButtonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '600',
+    color: '#fff', fontSize: 15, fontFamily: fonts.semibold,
   },
 });
 
@@ -408,76 +373,39 @@ const modal = StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 16, paddingVertical: 14,
     backgroundColor: colors.surface,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.separator,
+    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border,
   },
   title: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: colors.textPrimary,
+    fontSize: 17, fontFamily: fonts.semibold, color: colors.textPrimary,
   },
-  doneBtn: {
-    paddingVertical: 4,
-    paddingHorizontal: 4,
-  },
-  doneText: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: colors.accentBlue,
-  },
+  doneBtn: { paddingVertical: 4, paddingHorizontal: 4 },
+  doneText: { fontSize: 16, fontFamily: fonts.semibold, color: colors.brandSecondary },
   searchWrapper: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: 16, paddingVertical: 10,
     backgroundColor: colors.background,
   },
   searchInput: {
     backgroundColor: colors.surface,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    fontSize: 16,
-    color: colors.textPrimary,
+    borderRadius: 12, borderWidth: 1, borderColor: colors.border,
+    paddingHorizontal: 14, paddingVertical: 10,
+    fontSize: 15, fontFamily: fonts.regular, color: colors.textPrimary,
   },
   separator: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.separator,
-    marginLeft: 16,
+    height: StyleSheet.hairlineWidth, backgroundColor: colors.separator, marginLeft: 16,
   },
   row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 16, paddingVertical: 14,
     backgroundColor: colors.surface,
   },
   rowLeft: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
+    flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10,
   },
-  zoneName: {
-    fontSize: 16,
-    color: colors.textPrimary,
-  },
-  typeBadge: {
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  typeText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  checkmark: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.accentBlue,
-  },
+  zoneName: { fontSize: 15, fontFamily: fonts.regular, color: colors.textPrimary },
+  typeBadge: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
+  typeText: { fontSize: 11, fontFamily: fonts.semibold },
+  checkmark: { fontSize: 17, fontFamily: fonts.bold, color: colors.brandSecondary },
 });
