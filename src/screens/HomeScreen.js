@@ -9,6 +9,7 @@ import {
   ScrollView,
   StyleSheet,
   RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -22,6 +23,7 @@ import {
   ChevronDownIcon,
 } from 'react-native-heroicons/solid';
 import { getLogs } from '../services/accessService';
+import { useAuth } from '../context/AuthContext';
 import { colors, fonts } from '../theme';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -288,6 +290,7 @@ function DetailSheet({ log, onClose }) {
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function HomeScreen() {
+  const { user } = useAuth();
   const [from, setFrom] = useState(thirtyDaysAgo);
   const [to, setTo] = useState(today);
   const [logs, setLogs] = useState([]);
@@ -385,6 +388,8 @@ export default function HomeScreen() {
         onDismiss={() => setTypePickerVisible(false)}
       />
       {selectedLog && <DetailSheet log={selectedLog} onClose={() => setSelectedLog(null)} />}
+
+      <Text style={s.greeting}>Bienvenido, {user?.name}</Text>
 
       <View style={s.card}>
         {/* ── Filter toolbar ── */}
@@ -617,6 +622,13 @@ const s = StyleSheet.create({
     backgroundColor: colors.background,
     paddingHorizontal: 12,
     paddingBottom: 8,
+  },
+  greeting: {
+    fontFamily: fonts.semibold,
+    fontSize: 18,
+    color: colors.textPrimary,
+    marginBottom: 8,
+    marginTop: 4,
   },
   card: {
     flex: 1,

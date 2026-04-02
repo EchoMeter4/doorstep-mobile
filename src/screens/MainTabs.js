@@ -8,7 +8,7 @@ const Tab = createBottomTabNavigator();
 
 export default function MainTabs() {
   return (
-    <Tab.Navigator screenOptions={tabScreenOptions}>
+    <Tab.Navigator screenOptions={({ navigation }) => tabScreenOptions(navigation)}>
       <Tab.Screen
         name="Inicio"
         component={HomeScreen}
